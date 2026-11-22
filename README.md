@@ -74,6 +74,32 @@ microG 完整生效需要两件事，工具箱都管：
 `cache/backup_gms.apk` 再卸载。已在 Android 13 / x86_64 引擎上验证 microG 0.3.18 +
 FakeGApps 6.6 + LSPosed 2.2.1 正常工作。
 
+## LSPosed / Zygisk Next / Magisk 版本与安装顺序
+
+三个组件都建议用**官方最新版**，按下面顺序装（除 manager.apk 外都是当 Magisk 模块刷入）：
+
+| 组件 | 用什么版本 | 下载 |
+| --- | --- | --- |
+| Magisk | **原版**（topjohnwu 官方，不是各种分支/改版） | [releases/latest](https://github.com/topjohnwu/Magisk/releases/latest) |
+| Zygisk Next | **最新版**（Dr-TSNG 官方） | [releases/latest](https://github.com/Dr-TSNG/ZygiskNext/releases/latest) |
+| LSPosed | **最新版**（官方 LSPosed 或 JingMatrix 的 Vector 分支，二选一） | [LSPosed/latest](https://github.com/LSPosed/LSPosed/releases/latest) · [Vector/latest](https://github.com/JingMatrix/LSPosed/releases/latest) |
+| FakeGApps | 最新版（签名伪装用） | [releases/latest](https://github.com/whew-inc/FakeGApps/releases/latest) |
+
+1. **Magisk 装原版**：只用 topjohnwu/Magisk 的官方 APK（当前 v31.1，`Magisk-v31.1.apk`）。
+   本项目的 system.vhd 方案刷出来的引擎自带 Magisk 原版 31.1，一般不用再装；要升级就在引擎内
+   用官方 APK 覆盖安装，别用第三方改版，否则模块、Zygisk 行为都可能对不上。
+2. **Zygisk Next 装最新版**：下载 `Zygisk-Next-<版本>-release.zip`，在「Root / Magisk → 安装
+   Magisk 模块」里刷入，然后重启引擎。它是 Zygisk 的实现底座，LSPosed 依赖它。
+3. **LSPosed 装最新版（关键一步）**：刷入 `LSPosed-v<版本>-<构建号>-zygisk-release.zip` 后，
+   **必须从这个 zip 里解压出 `manager.apk` 并安装**（应用管理页「安装 APK」或 `adb install` 都行）。
+   原因：新版 LSPosed 的管理器不再单独发布/上架，只放在模块 zip 内；只刷 zip 不装 manager.apk，
+   模块虽然被加载，但**没有管理器界面**，看不到模块列表、也没法勾选作用域，等于无法管理模块。
+4. **FakeGApps**：刷入模块后打开 LSPosed 管理器 → 模块 → 启用 FakeGApps → 作用域勾选
+   「系统框架」→ 重启引擎，microG 的签名伪装才生效。
+
+本机实测通过的一套组合：Magisk 31.1 + Zygisk Next 1.5.3 + LSPosed 2.2.1 (7912) +
+FakeGApps 6.6 + microG 0.3.18。
+
 ## Root / 没有 Root 怎么办
 
 引擎自带 `su`（Magisk）时工具箱会识别为已 Root，解锁模块管理；未 Root 时可走社区成熟的
