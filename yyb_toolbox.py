@@ -64,6 +64,7 @@ ENGINE_PORT = 5555
 CREATE_NO_WINDOW = 0x08000000 if os.name == "nt" else 0
 
 MICROG_API = "https://api.github.com/repos/microg/GmsCore/releases/latest"
+GSF_API = "https://api.github.com/repos/microg/android_packages_apps_GsfProxy/releases/latest"
 FAKEGAPPS_API = "https://api.github.com/repos/whew-inc/FakeGApps/releases/latest"
 PLATFORM_TOOLS_URL = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
 
@@ -1607,9 +1608,10 @@ class ToolboxApp:
         stat_row = tk.Frame(stat_inner, bg=CARD)
         stat_row.pack(fill="x")
         for i, (key, title) in enumerate((("gms", "microG Services"), ("vending", "microG Companion"),
+                                           ("gsf", "GsfProxy (GSF)"),
                                            ("fakegapps", "签名伪装 FakeGApps"), ("lsposed", "LSPosed"))):
             cell = tk.Frame(stat_row, bg=CARD)
-            cell.grid(row=0, column=i, sticky="w", padx=(0, 30))
+            cell.grid(row=0, column=i, sticky="w", padx=(0, 24))
             tk.Label(cell, text=title, bg=CARD, fg=MUTED, font=FONT_SM).pack(anchor="w")
             v = tk.Label(cell, text="检测中…", bg=CARD, fg=TEXT, font=FONT_BD)
             v.pack(anchor="w", pady=(2, 0))
@@ -1678,6 +1680,7 @@ class ToolboxApp:
         def work(emit):
             res = {}
             for key, pkg in (("gms", "com.google.android.gms"), ("vending", "com.android.vending"),
+                             ("gsf", "com.google.android.gsf"),
                              ("fakegapps", "inc.whew.android.fakegapps"), ("lsposed", "org.lsposed.manager")):
                 try:
                     out = self.adb.shell(f"dumpsys package {pkg} | grep versionName", timeout=30)
@@ -1697,7 +1700,7 @@ class ToolboxApp:
             if err or not res:
                 return
             spoof = res.get("spoof", False)
-            for key in ("gms", "vending", "fakegapps", "lsposed"):
+            for key in ("gms", "vending", "gsf", "fakegapps", "lsposed"):
                 lab = self.microg_status[key]
                 ver = res.get(key, "")
                 text = f"已安装 {ver}" if ver else "未安装"
@@ -1764,8 +1767,8 @@ class ToolboxApp:
                 "一键安装 MicroG",
                 "将执行：\n"
                 "1. 检查已有 GMS（签名冲突时备份并卸载）\n"
-                "2. 下载最新 microG Services / Companion\n"
-                "3. 安装两个 APK 并自动授权\n"
+                "2. 下载最新 microG Services / Companion / GsfProxy\n"
+                "3. 安装以上 APK 并自动授权\n"
                 "4. 加入电池优化白名单\n"
                 "5. 检查 / 安装签名伪装组件\n\n"
                 "安装 microG 会替换引擎内的 Google 服务，可能影响依赖官方 GMS 的应用，是否继续？",
@@ -1835,6 +1838,36 @@ class ToolboxApp:
                         self.adb.run(["uninstall", "com.google.android.gms"], timeout=120)
                         out = self.adb.run(["install", "-r", "-d", "-g", str(apk)], timeout=900)
                         emit("microg_log", "  " + out.replace("\n", " ")[:160])
+
+            # 3.5 GsfProxy：GSF 代理，依赖 Google Services Framework 的应用（登录/推送等）需要
+            try:
+                gsf_ver = parse_version(self.adb.shell(
+                    "dumpsys package com.google.android.gsf | grep versionName", timeout=30)).strip()
+            except Exception:
+                gsf_ver = ""
+            try:
+                gsf_rel = self._fetch_release(GSF_API, "gsfproxy_release.json", emit)
+                gsf_tag = gsf_rel.get("tag_name", "")
+                gsf_asset = self._pick_asset(gsf_rel, "GsfProxy")
+                if not gsf_asset:
+                    raise AdbError("未找到 GsfProxy APK 资源")
+                cur_gsf = gsf_ver.lstrip("v")
+                latest_gsf = gsf_tag.lstrip("v")
+                if cur_gsf and cur_gsf == latest_gsf and not opts["force"]:
+                    emit("microg_log", f"GsfProxy 已是最新：{gsf_ver}")
+                else:
+                    emit("microg_log", f"GsfProxy：{gsf_ver or '未安装'} → {gsf_tag}，开始安装")
+                    apk = CACHE_DIR / "GsfProxy.apk"
+                    self._download(gsf_asset["browser_download_url"], apk, emit, "GsfProxy")
+                    out = self.adb.run(["install", "-r", "-d", "-g", str(apk)], timeout=300)
+                    emit("microg_log", "  " + out.replace("\n", " ")[:160])
+                    if "Success" not in out and "INSTALL_FAILED_UPDATE_INCOMPATIBLE" in out:
+                        emit("microg_log", "GSF 签名冲突，卸载旧包后重试 …")
+                        self.adb.run(["uninstall", "com.google.android.gsf"], timeout=120)
+                        out = self.adb.run(["install", "-r", "-d", "-g", str(apk)], timeout=300)
+                        emit("microg_log", "  " + out.replace("\n", " ")[:160])
+            except Exception as e:
+                emit("microg_log", f"GsfProxy 处理失败：{e}")
 
             # 4. 授权 / 白名单
             if opts["grant"]:
