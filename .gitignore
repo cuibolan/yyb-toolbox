@@ -1,0 +1,18 @@
+# runtime data
+cache/
+screenshots/
+tools/
+config.json
+
+# build output
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+
+# editor / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
