@@ -66,7 +66,7 @@ python yyb_toolbox.py --selftest   # 无界面自检：连引擎、读设备信�
 
 microG 完整生效需要两件事，工具箱都管：
 
-1. **microG 本体**：`com.google.android.gms`（microG Services）+ `com.android.vending`（microG Companion）+ 'microggsf'(https://github.com/microg/android_packages_apps_GsfProxy/releases)；
+1. **microG 本体**：`com.google.android.gms`（microG Services）+ `com.android.vending`（microG Companion）；
 2. **签名伪装**：Magisk + LSPosed + FakeGApps。没有 FakeGApps 时工具箱会自动下载安装，
    之后在 LSPosed 里启用 FakeGApps、作用域勾选「系统框架」，重启引擎生效。
 
