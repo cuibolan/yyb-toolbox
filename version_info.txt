@@ -1,7 +1,7 @@
 VSVersionInfo(
   ffi=FixedFileInfo(
-    filevers=(1, 3, 2, 0),
-    prodvers=(1, 3, 2, 0),
+    filevers=(1, 3, 3, 0),
+    prodvers=(1, 3, 3, 0),
     mask=0x3f,
     flags=0x0,
     OS=0x40004,
@@ -15,11 +15,11 @@ VSVersionInfo(
         u'080404B0',
         [StringStruct(u'CompanyName', u'YYB Toolbox'),
          StringStruct(u'FileDescription', u'安卓引擎工具箱 - 调试与 microG/Root 管理'),
-         StringStruct(u'FileVersion', u'1.3.2.0'),
+         StringStruct(u'FileVersion', u'1.3.3.0'),
          StringStruct(u'InternalName', u'YYBToolbox'),
          StringStruct(u'OriginalFilename', u'YYBToolbox.exe'),
          StringStruct(u'ProductName', u'安卓引擎工具箱'),
-         StringStruct(u'ProductVersion', u'1.3.2.0')])
+         StringStruct(u'ProductVersion', u'1.3.3.0')])
     ]),
     VarFileInfo([VarStruct(u'Translation', [2052, 1200])])
   ]

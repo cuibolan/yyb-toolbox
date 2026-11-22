@@ -2699,6 +2699,19 @@ class ToolboxApp:
                          "type": "目录" if is_dir else ("链接" if perm.startswith("l") else "文件"),
                          "size": size, "perm": perm, "mtime": f"{date1} {date2}"})
         rows.sort(key=lambda r: (not r["is_dir"], r["name"].lower()))
+        links = [r for r in rows if r["type"] == "链接" and '"' not in r["name"]][:50]
+        if links:
+            cmd = " ; ".join(f'[ -d "{path}{r["name"]}" ] && echo "D|{r["name"]}"' for r in links)
+            try:
+                probe = self.adb.shell(cmd, root=root_mode, timeout=60)
+                dirs = {line.split("|", 1)[1].strip() for line in probe.splitlines() if line.startswith("D|")}
+                for r in links:
+                    if r["name"] in dirs:
+                        r["is_dir"] = True
+                        r["type"] = "目录（链接）"
+            except Exception:
+                pass
+        rows.sort(key=lambda r: (not r["is_dir"], r["name"].lower()))
         return rows
 
     def load_dir(self):
@@ -2751,11 +2764,32 @@ class ToolboxApp:
         name, typ = self.file_tree.item(sel[0], "values")[:2]
         cur = (self.file_path_var.get().strip() or "/sdcard").replace("\\", "/").rstrip("/")
         path = cur + "/" + name
-        if typ == "目录":
+        if typ.startswith("目录"):
             self.file_path_var.set(path)
             self.load_dir()
-        else:
-            self.pull_file()
+            return
+        if typ == "链接":
+            # 软链接可能指向目录，先问设备它到底是哪种，再决定进入还是下载
+            root_mode = self.file_root_mode.get()
+
+            def work(emit):
+                out = self.adb.shell(f'[ -d "{path}" ] && echo DIR || echo FILE',
+                                     root=root_mode, timeout=30)
+                return "DIR" in out
+
+            def done(is_dir, err):
+                if err:
+                    messagebox.showerror("无法判断链接类型", str(err), parent=self.root)
+                    return
+                if is_dir:
+                    self.file_path_var.set(path)
+                    self.load_dir()
+                else:
+                    self.pull_file()
+            self.set_status(f"正在判断 {name} 是不是目录 …")
+            self.bg(work, done)
+            return
+        self.pull_file()
 
     def _join_remote(self, name: str = "") -> str:
         """拼接安卓端路径，始终用 /，不受 Windows 路径规则影响。"""
