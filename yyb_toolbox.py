@@ -2705,7 +2705,10 @@ class ToolboxApp:
         if not self.adb.ready() or self.adb.state() != "device":
             self.set_status("引擎未连接，无法浏览文件")
             return
-        path = self.file_path_var.get().strip() or "/sdcard"
+        path = (self.file_path_var.get().strip() or "/sdcard").replace("\\", "/")
+        if not path.startswith("/"):
+            path = "/" + path
+        path = "/" + path.strip("/")
         root_mode = self.file_root_mode.get()
         self.set_status(f"读取 {path} …")
 
@@ -2731,10 +2734,13 @@ class ToolboxApp:
         self.bg(work, done)
 
     def go_up(self):
-        cur = self.file_path_var.get().strip() or "/sdcard"
-        parent = str(Path(cur).parent) if cur not in ("/", "") else "/"
-        if not parent:
-            parent = "/"
+        # 安卓路径必须用纯字符串处理：pathlib 在 Windows 上会把 / 全变成 \
+        cur = (self.file_path_var.get().strip() or "/sdcard").replace("\\", "/")
+        cur = "/" + cur.strip("/")
+        if cur in ("/", ""):
+            self.set_status("已经是根目录 /")
+            return
+        parent = cur.rsplit("/", 1)[0] or "/"
         self.file_path_var.set(parent)
         self.load_dir()
 
@@ -2743,12 +2749,18 @@ class ToolboxApp:
         if not sel:
             return
         name, typ = self.file_tree.item(sel[0], "values")[:2]
-        path = self.file_path_var.get().strip().rstrip("/") + "/" + name
+        cur = (self.file_path_var.get().strip() or "/sdcard").replace("\\", "/").rstrip("/")
+        path = cur + "/" + name
         if typ == "目录":
             self.file_path_var.set(path)
             self.load_dir()
         else:
             self.pull_file()
+
+    def _join_remote(self, name: str = "") -> str:
+        """拼接安卓端路径，始终用 /，不受 Windows 路径规则影响。"""
+        cur = (self.file_path_var.get().strip() or "/sdcard").replace("\\", "/").rstrip("/")
+        return (cur + "/" + name) if name else cur
 
     def selected_remote_path(self) -> str | None:
         sel = self.file_tree.selection()
@@ -2756,7 +2768,7 @@ class ToolboxApp:
             messagebox.showinfo("提示", "请先选择一个文件或文件夹", parent=self.root)
             return None
         name = self.file_tree.item(sel[0], "values")[0]
-        return self.file_path_var.get().strip().rstrip("/") + "/" + name
+        return self._join_remote(name)
 
     def push_file(self):
         files = filedialog.askopenfilenames(title="选择要上传的文件")
@@ -2795,7 +2807,7 @@ class ToolboxApp:
         name = simpledialog.askstring("新建文件夹", "文件夹名称：", parent=self.root)
         if not name:
             return
-        path = self.file_path_var.get().strip().rstrip("/") + "/" + name
+        path = self._join_remote(name)
         root_mode = self.file_root_mode.get()
 
         def done(r, e):
