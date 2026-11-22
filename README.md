@@ -94,6 +94,8 @@ FakeGApps 6.6 + LSPosed 2.2.1 正常工作。
    **必须从这个 zip 里解压出 `manager.apk` 并安装**（应用管理页「安装 APK」或 `adb install` 都行）。
    原因：新版 LSPosed 的管理器不再单独发布/上架，只放在模块 zip 内；只刷 zip 不装 manager.apk，
    模块虽然被加载，但**没有管理器界面**，看不到模块列表、也没法勾选作用域，等于无法管理模块。
+   > 工具箱已内置这一步：刷模块 zip 时会自动扫描 `manager.apk` 并询问是否一并安装；
+   > 也可以用 Root / Magisk 页的「装模块自带 APK」单独提取安装（会自动跳过 LSPosed 内部的 `daemon.apk`）。
 4. **FakeGApps**：刷入模块后打开 LSPosed 管理器 → 模块 → 启用 FakeGApps → 作用域勾选
    「系统框架」→ 重启引擎，microG 的签名伪装才生效。
 

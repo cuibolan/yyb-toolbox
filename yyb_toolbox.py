@@ -1986,6 +1986,7 @@ class ToolboxApp:
         self.button(r2, "清理 Magisk 模块标记", self.remove_module_flags).pack(side="left", padx=8)
         self.button(r2, "Zygisk 说明", self.show_zygisk_help).pack(side="left")
         self.button(r2, "未 Root？刷入方案", self.show_root_guide, "success").pack(side="left", padx=8)
+        self.button(r2, "装模块自带 APK", self.install_bundled_apk).pack(side="left")
 
         mods_card, mods_inner = self.card(page, "Magisk 模块")
         mods_card.grid(row=3, column=0, sticky="nsew", pady=(12, 0))
@@ -2126,11 +2127,109 @@ class ToolboxApp:
         self.bg(lambda emit: self.adb.shell(f"rm -rf {mod['path']}", root=True, timeout=30),
                 lambda r, e: (self.set_status("已删除模块" if not e else str(e)), self.refresh_root()))
 
+    def _module_bundled_apks(self, zip_path: str) -> list[dict]:
+        """列出 Magisk 模块 zip 内自带的 APK（LSPosed/Vector 的 manager.apk 等）。"""
+        import zipfile
+        rows = []
+        try:
+            with zipfile.ZipFile(zip_path) as z:
+                for name in z.namelist():
+                    if not name.lower().endswith(".apk"):
+                        continue
+                    if "daemon" in Path(name).name.lower():  # LSPosed 的内部服务，不是用户可装的 APK
+                        continue
+                    info = z.getinfo(name)
+                    if info.file_size < 10000:  # 忽略占位/空文件
+                        continue
+                    rows.append({"entry": name, "name": Path(name).name, "size": info.file_size})
+        except Exception:
+            return []
+        # manager.apk 排前面
+        rows.sort(key=lambda r: (0 if "manager" in r["name"].lower() else 1, r["name"]))
+        return rows
+
+    def _extract_module_apks(self, zip_path: str, rows: list[dict]) -> list[dict]:
+        import zipfile
+        out = []
+        dest_dir = CACHE_DIR / "module_apk"
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(zip_path) as z:
+            for r in rows:
+                dest = dest_dir / r["name"]
+                with z.open(r["entry"]) as src, open(dest, "wb") as f:
+                    shutil.copyfileobj(src, f)
+                out.append({"local": str(dest), "name": r["name"], "size": r["size"]})
+        return out
+
+    def install_bundled_apk(self):
+        """只安装模块 zip 里的管理器 APK（不刷模块）。"""
+        path = filedialog.askopenfilename(title="选择模块 zip（从中提取 manager.apk）",
+                                          filetypes=[("Magisk 模块", "*.zip"), ("APK", "*.apk")])
+        if not path:
+            return
+        if path.lower().endswith(".apk"):
+            apks = [{"local": path, "name": Path(path).name, "size": Path(path).stat().st_size}]
+        else:
+            rows = self._module_bundled_apks(path)
+            if not rows:
+                messagebox.showinfo("没有 APK", "这个 zip 里没有找到 APK（例如 LSPosed 的 manager.apk）。",
+                                    parent=self.root)
+                return
+            try:
+                apks = self._extract_module_apks(path, rows)
+            except Exception as e:
+                messagebox.showerror("解压失败", str(e), parent=self.root)
+                return
+
+        def work(emit):
+            res = []
+            for apk in apks:
+                rpath = "/data/local/tmp/" + apk["name"]
+                emit("log", f"[{now_str()}] 安装 {apk['name']}")
+                self.adb.run(["push", apk["local"], rpath], timeout=300)
+                try:
+                    out = self.adb.run(["install", "-r", "-d", "-g", rpath], timeout=600)
+                except Exception as e:
+                    out = str(e)
+                res.append((apk["name"], out))
+            return res
+
+        def done(res, err):
+            if err:
+                messagebox.showwarning("安装失败", str(err), parent=self.root)
+                return
+            lines = [f"· {n}：{'成功' if 'Success' in o else o.strip()[:120]}" for n, o in res]
+            messagebox.showinfo("安装结果", "\n".join(lines) + "\n\nLSPosed 管理器装好后，重启引擎即可打开。",
+                                parent=self.root)
+        self.set_status("正在安装模块自带 APK…")
+        self.bg(work, done)
+
     def install_magisk_module(self):
         path = filedialog.askopenfilename(title="选择 Magisk 模块 (.zip)",
                                           filetypes=[("Magisk 模块", "*.zip")])
         if not path:
             return
+
+        bundled = self._module_bundled_apks(path)
+        apk_paths = []
+        if bundled:
+            names = "、".join(f"{r['name']}（{r['size']/1048576:.1f} MB）" for r in bundled[:5])
+            tip = ""
+            if any("manager" in r["name"].lower() for r in bundled):
+                tip = ("\n\n检测到 manager.apk：LSPosed / Vector 的管理器就放在模块 zip 里，"
+                       "只刷模块不装它就没有界面管理模块。")
+            if not messagebox.askyesno(
+                    "模块内自带 APK",
+                    f"这个模块 zip 里还包含：\n{names}\n{tip}\n\n刷入模块后顺便安装这些 APK 吗？",
+                    parent=self.root):
+                bundled = []
+            else:
+                try:
+                    apk_paths = self._extract_module_apks(path, bundled)
+                except Exception as e:
+                    messagebox.showwarning("解压失败", str(e), parent=self.root)
+                    apk_paths = []
+
         self.set_status("正在安装 Magisk 模块…")
 
         def work(emit):
@@ -2138,13 +2237,33 @@ class ToolboxApp:
             emit("log", f"[{now_str()}] 推送模块到 {remote}")
             self.adb.run(["push", path, remote], timeout=300)
             out = self.adb.shell(f"magisk --install-module {remote}", root=True, timeout=300)
-            return out
+            apk_out = []
+            for apk in apk_paths:
+                rpath = "/data/local/tmp/" + apk["name"]
+                emit("log", f"[{now_str()}] 安装模块自带 APK：{apk['name']}")
+                self.adb.run(["push", apk["local"], rpath], timeout=300)
+                try:
+                    res = self.adb.run(["install", "-r", "-d", "-g", rpath], timeout=600)
+                except Exception as e:
+                    res = str(e)
+                apk_out.append((apk["name"], res))
+            return out, apk_out
 
-        def done(out, err):
+        def done(res, err):
             if err:
                 messagebox.showwarning("安装失败", str(err), parent=self.root)
                 return
-            messagebox.showinfo("Magisk 模块", f"安装输出：\n{out}\n\n重启引擎后生效。", parent=self.root)
+            out, apk_out = res
+            msg = f"模块安装输出：\n{out}\n"
+            if apk_out:
+                msg += "\n自带 APK 安装结果：\n"
+                for name, r in apk_out:
+                    ok = "Success" in r
+                    msg += f"· {name}：{'成功' if ok else r.strip()[:120]}\n"
+                msg += "\n重启引擎后生效。LSPosed 激活后可在管理器里勾选模块作用域。"
+            else:
+                msg += "\n重启引擎后生效。"
+            messagebox.showinfo("Magisk 模块", msg, parent=self.root)
             self.refresh_root()
         self.bg(work, done)
 
