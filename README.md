@@ -215,5 +215,12 @@ python yyb_toolbox.py --selftest
 
 **Hyper-V 异常**
 应用宝设置内有「修复工具」；也可在「启用或关闭 Windows 功能」中修复 Hyper-V 后重启电脑。
+**点了「打开 Magisk / LSPosed / MicroG」却没反应**
+
+v1.3.1 起会明确告诉你三件事之一：应用没装、命令失败、或者「进程起来了但停在启动画面」。第三种是引擎侧的渲染问题——dumpsys window 里这些应用一直挂着 Splash Screen，任务 isible=true 但主界面画不出来。按顺序试：等 10 秒重开、引擎里按返回退出再打开、重启引擎；仍然不行就换旧版本（Magisk 27 / LSPosed 1.9.2 这类）通常能正常显示。
+
+**文件页切进某个目录后一片空白**
+
+多半是没有权限（/data/app 这类系统目录，非 Root 读不到 ls 会直接返回 Permission denied）。v1.3.1 起会弹窗提示原因，勾上顶部的「Root 浏览」再进即可；真正的空目录会显示「空目录（0 项）」。
 
 powered by Doubao

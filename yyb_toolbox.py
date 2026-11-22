@@ -1357,20 +1357,76 @@ class ToolboxApp:
             return None
         return self.app_tree.item(sel[0], "values")[0]
 
+    def start_package(self, label: str, pkg: str, activity: str | None = None):
+        """打开设备上的一个应用，失败时给出明确原因，绝不静默。"""
+        if not self.adb.ready() or self.adb.state() != "device":
+            messagebox.showwarning(
+                "引擎未连接",
+                f"现在没有连上引擎，所以打不开{label}。\n\n"
+                "请先点右上角「连接引擎」（或先启动应用宝并打开任意应用），等状态变成「已连接」再试。",
+                parent=self.root)
+            return
+
+        self.set_status(f"正在打开{label} …")
+
+        def work(emit):
+            listed = self.adb.shell(f"pm list packages {pkg}", timeout=20)
+            if f"package:{pkg}" not in listed:
+                raise RuntimeError(f"设备上没有安装 {pkg}，所以打不开{label}。")
+            comp = f"{pkg}/{activity}" if activity else ""
+            if not comp:
+                out = self.adb.shell(f"cmd package resolve-activity --brief {pkg} | tail -n 1", timeout=30)
+                for line in out.splitlines():
+                    if "/" in line and "No activity" not in line:
+                        comp = line.strip()
+            attempts = []
+            if comp:
+                attempts.append(f"am start -n {comp}")
+            attempts.append(f"monkey -p {pkg} -c android.intent.category.LAUNCHER 1")
+            last = ""
+            for cmd in attempts:
+                res = self.adb.shell(cmd, timeout=40)
+                last = res
+                if "Error" in res or "Exception" in res or "No activities found" in res:
+                    continue
+                front = self.adb.shell(
+                    f"dumpsys activity activities | grep -m1 -E 'Task.*{pkg}.*visible=true'", timeout=40)
+                if pkg in front:
+                    splash = self.adb.shell(
+                        f"dumpsys window windows | grep -m1 'Splash Screen {pkg}'", timeout=40)
+                    return {"label": label, "splash": pkg in splash}
+            raise RuntimeError(
+                f"{label}的任务没有在引擎里显示出来。\n\n"
+                f"常见原因：应用启动就闪退，或引擎窗口被别的程序挡住。\n命令输出：{last.strip()[:300]}")
+
+        def done(_r, e):
+            if e:
+                self.set_status(f"打开{label}失败")
+                messagebox.showerror(f"打开{label}失败", str(e), parent=self.root)
+                return
+            stuck = _r.get("splash") if isinstance(_r, dict) else False
+            if stuck:
+                self.set_status(f"{label} 已启动，但停在启动画面")
+                messagebox.showwarning(
+                    "已启动，但没显示界面",
+                    f"{label} 的进程确实起来了（任务在引擎里是可见的），但窗口里只有启动画面，"
+                    "应用自己没画出界面。\n\n"
+                    "这不是工具箱没打开它。可以按顺序试：\n"
+                    "1. 等 10 秒左右再点一次；\n"
+                    "2. 在引擎窗口按返回键退出，再重新打开；\n"
+                    "3. 重启引擎（工具箱首页有「重启 ADB」，或直接用应用宝重启）；\n"
+                    "4. 上述都无效时，通常是该应用在这个引擎的渲染环境里起不来，"
+                    "换旧一点的版本（比如 Magisk 27、LSPosed 1.9.2）往往能显示。",
+                    parent=self.root)
+            else:
+                self.set_status(f"已打开{label}")
+        self.bg(work, done)
+
     def launch_app(self):
         pkg = self.selected_pkg("启动")
         if not pkg:
             return
-        def work(emit):
-            out = self.adb.shell(f"cmd package resolve-activity --brief {pkg} | tail -n 1", timeout=30)
-            comp = ""
-            for line in out.splitlines():
-                if "/" in line:
-                    comp = line.strip()
-            if comp and "No activity found" not in comp:
-                return self.adb.shell(f"am start -n {comp}", timeout=40)
-            return self.adb.shell(f"monkey -p {pkg} -c android.intent.category.LAUNCHER 1", timeout=40)
-        self.bg(work, lambda r, e: self.set_status(f"已启动 {pkg}" if not e else str(e)))
+        self.start_package(pkg, pkg)
 
     def force_stop_app(self):
         pkg = self.selected_pkg("停止")
@@ -1957,22 +2013,11 @@ class ToolboxApp:
         self.bg(work, done)
 
     def open_microg_settings(self):
-        def work(emit):
-            return self.adb.shell(
-                "am start -n com.google.android.gms/org.microg.gms.ui.SettingsActivity", timeout=40)
-
-        def done(r, e):
-            self.set_status("已打开 MicroG 设置" if not e else str(e))
-        self.bg(work, done)
+        self.start_package("MicroG 设置", "com.google.android.gms",
+                           "org.microg.gms.ui.SettingsActivity")
 
     def open_lsposed(self):
-        def work(emit):
-            return self.adb.shell(
-                "monkey -p org.lsposed.manager -c android.intent.category.LAUNCHER 1", timeout=40)
-
-        def done(r, e):
-            self.set_status("已打开 LSPosed" if not e else f"打开失败：{e}")
-        self.bg(work, done)
+        self.start_package("LSPosed", "org.lsposed.manager")
 
     # ======================================================================
     # Root / Magisk
@@ -2307,10 +2352,7 @@ class ToolboxApp:
         self.append_shell("已切换到 Root 模式\n", "info")
 
     def open_magisk(self):
-        def work(emit):
-            return self.adb.shell(
-                "monkey -p com.topjohnwu.magisk -c android.intent.category.LAUNCHER 1", timeout=40)
-        self.bg(work, lambda r, e: self.set_status("已打开 Magisk" if not e else str(e)))
+        self.start_package("Magisk", "com.topjohnwu.magisk")
 
     def remount_rw(self):
         def work(emit):
@@ -2626,6 +2668,16 @@ class ToolboxApp:
     def _ls(self, path: str, root_mode: bool = False) -> list[dict]:
         path = "/" if path == "/" else path.rstrip("/") + "/"
         out = self.adb.shell(f'ls -la "{path}"', root=root_mode, timeout=60)
+        low = out.lower()
+        if "permission denied" in low:
+            hint = "没有权限读取这个目录（系统目录需要 Root）。请在顶部勾选「Root 浏览」后再试。"
+            if not self.adb.state() == "device":
+                hint = "设备未连接。"
+            raise RuntimeError(hint)
+        if "no such file or directory" in low:
+            raise RuntimeError(f"路径不存在：{path}")
+        if "not a directory" in low:
+            raise RuntimeError(f"这不是目录，而是文件：{path}")
         rows = []
         for line in out.splitlines():
             line = line.rstrip()
@@ -2662,14 +2714,20 @@ class ToolboxApp:
 
         def done(rows, err):
             if err:
+                self.file_tree.delete(*self.file_tree.get_children())
                 self.set_status(f"读取失败：{err}")
+                messagebox.showwarning("读取目录失败", str(err), parent=self.root)
                 return
             self.current_dir = path
+            self.set_status(f"读取 {path} …")
             self.file_tree.delete(*self.file_tree.get_children())
             for r in rows:
                 self.file_tree.insert("", "end", values=(r["name"], r["type"], r["size"],
                                                         r["perm"], r["mtime"]))
-            self.set_status(f"{path} · {len(rows)} 项")
+            if rows:
+                self.set_status(f"{path} · {len(rows)} 项")
+            else:
+                self.set_status(f"{path} · 空目录（0 项）")
         self.bg(work, done)
 
     def go_up(self):
