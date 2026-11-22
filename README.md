@@ -27,7 +27,7 @@
 
 ## 下载
 
-到 [Releases](../../releases) 下载 `YYBToolbox.exe`（约 12 MB，单文件，双击即用）。
+到 [Releases](https://github.com/cuibolan/yyb-toolbox/releases) 下载 `YYBToolbox.exe`（约 12 MB，单文件，双击即用）。
 
 > 未签名，首次运行若遇 SmartScreen 提示「未知发布者」，点「更多信息 → 仍要运行」。
 
