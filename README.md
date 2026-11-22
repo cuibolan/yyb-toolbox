@@ -213,3 +213,5 @@ python yyb_toolbox.py --selftest
 
 **Hyper-V 异常**
 应用宝设置内有「修复工具」；也可在「启用或关闭 Windows 功能」中修复 Hyper-V 后重启电脑。
+
+powered by Doubao
