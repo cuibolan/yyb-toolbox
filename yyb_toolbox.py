@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-应用宝引擎工具箱 (YYB Engine Toolbox)
+安卓引擎工具箱 (YYB Toolbox)
 ====================================
 一个类似 "WSA 工具箱" 的 Windows 桌面工具，用来调试「腾讯应用宝电脑版」内置的
 Android 引擎（Androws / AOSP on Intel Platform，ADB 端口 127.0.0.1:5555）。
@@ -672,7 +672,7 @@ class ToolboxApp:
     # 界面骨架
     # ======================================================================
     def _build_ui(self):
-        self.root.title("应用宝引擎工具箱 · YYB Toolbox")
+        self.root.title("安卓引擎工具箱 · YYB Toolbox")
         try:
             self.root.iconbitmap(default=str(resource_path("app.ico")))
         except Exception:
@@ -686,7 +686,7 @@ class ToolboxApp:
         top = tk.Frame(self.root, bg=PANEL, height=64)
         top.pack(fill="x")
         top.pack_propagate(False)
-        tk.Label(top, text="应用宝引擎工具箱", bg=PANEL, fg=TEXT, font=FONT_TITLE).pack(side="left", padx=(18, 8), pady=14)
+        tk.Label(top, text="安卓引擎工具箱", bg=PANEL, fg=TEXT, font=FONT_TITLE).pack(side="left", padx=(18, 8), pady=14)
         tk.Label(top, text="YYB TOOLBOX", bg=PANEL, fg=MUTED, font=("Consolas", 9)).pack(side="left", pady=(18, 0), anchor="n")
 
         right = tk.Frame(top, bg=PANEL)
@@ -1021,7 +1021,7 @@ class ToolboxApp:
         self.button(row1, "Root 终端", lambda: self.show_page("root")).pack(side="left", padx=8)
         self.button(row1, "截图", self.take_screenshot).pack(side="left")
         self.button(row1, "重启 ADB", self.restart_adb).pack(side="left", padx=8)
-        self.button(row1, "应用宝开发者模式", self.show_dev_guide).pack(side="left")
+        self.button(row1, "开发者模式", self.show_dev_guide).pack(side="left")
 
         # 设备信息
         info_card, info_inner = self.card(page, "设备信息")
@@ -1114,7 +1114,7 @@ class ToolboxApp:
 
     def show_dev_guide(self):
         top = tk.Toplevel(self.root)
-        top.title("应用宝引擎开发者模式 / ADB 开启指引")
+        top.title("引擎开发者模式 / ADB 开启指引")
         top.geometry("640x520")
         top.configure(bg=BG)
         txt = scrolledtext.ScrolledText(top, bg="#0c1015", fg=TEXT, font=FONT, relief="flat",
@@ -1599,7 +1599,7 @@ class ToolboxApp:
         head = tk.Frame(page, bg=BG)
         head.grid(row=0, column=0, sticky="ew")
         tk.Label(head, text="MicroG 一键安装与修复", bg=BG, fg=TEXT, font=FONT_BD).pack(side="left")
-        tk.Label(head, text="为应用宝引擎提供 Google 服务替代方案（需签名伪装）",
+        tk.Label(head, text="为 Android 引擎提供 Google 服务替代方案（需签名伪装）",
                  bg=BG, fg=MUTED, font=FONT_SM).pack(side="left", padx=12)
 
         stat_card, stat_inner = self.card(page, "组件状态")
@@ -2379,7 +2379,7 @@ class ToolboxApp:
     def show_zygisk_help(self):
         messagebox.showinfo(
             "Zygisk / LSPosed",
-            "应用宝引擎为 x86_64 Android 13，可使用 Magisk + Zygisk Next + LSPosed。\n\n"
+            "本引擎为 x86_64 Android 13，可装 Magisk + Zygisk Next + LSPosed。\n\n"
             "1. 在 Magisk 中确认 Zygisk 已启用（或安装 Zygisk Next 模块）。\n"
             "2. LSPosed 模块安装后重启引擎，LSPosed 管理器会出现在应用列表。\n"
             "3. microG 的签名伪装由 FakeGApps（LSPosed 模块）提供：\n"
@@ -3026,7 +3026,7 @@ class ToolboxApp:
 
         bar = tk.Frame(page, bg=BG)
         bar.grid(row=2, column=0, sticky="ew", pady=(10, 0))
-        self.button(bar, "启动应用宝", self.start_store, "primary").pack(side="left")
+        self.button(bar, "启动引擎", self.start_store, "primary").pack(side="left")
         self.button(bar, "结束引擎进程", self.kill_engine, "danger").pack(side="left", padx=8)
         self.button(bar, "查看端口 5555", self.check_port).pack(side="left", padx=8)
         self.button(bar, "查看引擎进程", self.check_process).pack(side="left")
@@ -3124,13 +3124,13 @@ class ToolboxApp:
     def start_store(self):
         path = find_store_launcher()
         if not path:
-            messagebox.showinfo("未找到应用宝", "未能定位应用宝启动器，请手动启动「腾讯应用宝电脑版」。",
+            messagebox.showinfo("未找到引擎启动器", "未能定位应用宝启动器，请手动启动「腾讯应用宝电脑版」。",
                                 parent=self.root)
             return
         try:
             os.startfile(path)
-            self.set_status(f"已启动应用宝：{path}")
-            self.diag_write(f"启动应用宝：{path}")
+            self.set_status(f"已启动引擎：{path}")
+            self.diag_write(f"启动引擎：{path}")
         except Exception as e:
             messagebox.showwarning("启动失败", str(e), parent=self.root)
 

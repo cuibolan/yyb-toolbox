@@ -1,9 +1,11 @@
-# 应用宝引擎工具箱（YYB Toolbox）
+# 安卓引擎工具箱（YYB Toolbox）
 
 仿「WSA 工具箱」的 Windows 桌面工具，用来调试**腾讯应用宝电脑版**内置的 Android 引擎
 （Androws / AOSP on Intel Platform，ADB 端口 `127.0.0.1:5555`）。
 
 纯 Python 标准库实现（tkinter + adb），不需要安装任何第三方包。
+
+> **非官方工具声明**：本项目是第三方开源工具，与腾讯公司及其关联方无任何关系，未获其授权或认可。文中出现的「应用宝」「Androws」仅用于说明本工具所调试的对象，相关商标归其权利人所有。请通过腾讯官网获取正版应用宝电脑版。
 
 ![界面预览](界面预览.jpg)
 
@@ -12,7 +14,7 @@
 ## 快速开始
 
 1. 打开「腾讯应用宝电脑版」，随便启动一个应用/游戏，等 Android 引擎起来（约 10~30 秒）。
-2. 双击 `应用宝引擎工具箱.exe`（单文件，免安装、无需 Python）。也可以双击 `启动工具箱.bat`。
+2. 双击 `YYBToolbox.exe`（单文件，免安装、无需 Python）。也可以双击 `启动工具箱.bat`。
 3. 工具箱会自动寻找 `adb.exe`，然后自动连接 `127.0.0.1:5555`。
 4. 顶部显示「已连接」即可开始使用。
 
@@ -153,7 +155,7 @@ E:\Program Files\Tencent\Androws\Image\5.10.7900.2936\system.vhd   （约 1.7 GB
 
 ## 免 Python 运行 / 自行打包
 
-发布版就是根目录的 `应用宝引擎工具箱.exe`（约 12 MB，单文件，双击即用）。第一次启动会慢
+发布版就是根目录的 `YYBToolbox.exe`（约 12 MB，单文件，双击即用）。第一次启动会慢
 1~3 秒（自解压），之后正常。运行时在 exe 同级生成 `cache/`、`screenshots/`、`config.json`，
 把 exe 单独拷贝到别的文件夹也一样能用。
 
@@ -162,7 +164,7 @@ E:\Program Files\Tencent\Androws\Image\5.10.7900.2936\system.vhd   （约 1.7 GB
 ```bat
 py -m pip install pyinstaller
 py -m PyInstaller --noconfirm --clean --onefile --noconsole ^
-  --name "应用宝引擎工具箱" --icon "app.ico" --add-data "app.ico;." ^
+  --name "YYBToolbox" --icon "app.ico" --add-data "app.ico;." ^
   --version-file "version_info.txt" .\yyb_toolbox.py
 ```
 
@@ -180,7 +182,7 @@ python yyb_toolbox.py --selftest
 
 ```
 应用宝工具箱/
-├─ 应用宝引擎工具箱.exe     # 单文件发布版（免 Python）
+├─ YYBToolbox.exe             # 单文件发布版（免 Python）
 ├─ 启动工具箱.bat           # 双击启动（优先找 exe，回退到 Python 源码）
 ├─ README.md
 ├─ 界面预览.jpg             # 首页界面截图
