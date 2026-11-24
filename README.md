@@ -98,10 +98,13 @@ microG 用来替代 Google 服务框架。完整生效需要两件事：
    用官方 APK 覆盖安装，别用第三方改版，否则模块、Zygisk 行为都可能对不上。
 2. **Zygisk Next 装最新版**：下载 `Zygisk-Next-<版本>-release.zip`，在「Root / Magisk → 安装
    Magisk 模块」里刷入，然后重启引擎。它是 Zygisk 的实现底座，LSPosed 依赖它。
-3. **LSPosed 装最新版（关键一步）**：刷入 `LSPosed-v<版本>-<构建号>-zygisk-release.zip` 后，
-   **必须从这个 zip 里解压出 `manager.apk` 并安装**（应用管理页「安装 APK」或 `adb install` 都行）。
+3. **LSPosed 装最新版（关键一步）**：从 [lsposed.zip](https://lsposed.zip) 下载模块 zip
+   （当前为 `LSPosed-v2.2.1-7912-release.zip`，约 6.4 MB），在「安装 Magisk 模块」里刷入，
+   然后**必须在同一个 zip 的根目录解压出 `manager.apk` 并安装**（应用管理页「安装 APK」或 `adb install` 都行）。
    原因：新版 LSPosed 的管理器不再单独发布/上架，只放在模块 zip 内；只刷 zip 不装 manager.apk，
    模块虽然被加载，但**没有管理器界面**，看不到模块列表、也没法勾选作用域，等于无法管理模块。
+   `manager.apk` 的位置和名字是固定的（zip 根目录、就叫 `manager.apk`）；同目录下的 `daemon.apk`
+   是框架内部服务，**不要安装**，工具箱会自动跳过它。
    > 工具箱已内置这一步：刷模块 zip 时会自动扫描 `manager.apk` 并询问是否一并安装；
    > 也可以用 Root / Magisk 页的「装模块自带 APK」单独提取安装（会自动跳过 LSPosed 内部的 `daemon.apk`）。
 4. **FakeGApps**：刷入模块后打开 LSPosed 管理器 → 模块 → 启用 FakeGApps → 作用域勾选
@@ -215,9 +218,10 @@ python yyb_toolbox.py --selftest
 
 **Hyper-V 异常**
 应用宝设置内有「修复工具」；也可在「启用或关闭 Windows 功能」中修复 Hyper-V 后重启电脑。
+
 **点了「打开 Magisk / LSPosed / MicroG」却没反应**
 
-v1.3.1 起会明确告诉你三件事之一：应用没装、命令失败、或者「进程起来了但停在启动画面」。第三种是引擎侧的渲染问题——dumpsys window 里这些应用一直挂着 Splash Screen，任务 isible=true 但主界面画不出来。按顺序试：等 10 秒重开、引擎里按返回退出再打开、重启引擎；仍然不行就换旧版本（Magisk 27 / LSPosed 1.9.2 这类）通常能正常显示。
+v1.3.1 起会明确告诉你三件事之一：应用没装、命令失败、或者「进程起来了但停在启动画面」。第三种是引擎侧的渲染问题——dumpsys window 里这些应用一直挂着 Splash Screen，任务 visible=true 但主界面画不出来。按顺序试：等 10 秒重开、引擎里按返回退出再打开、重启引擎；仍然不行就换旧版本（Magisk 27 / LSPosed 1.9.2 这类）通常能正常显示。
 
 **文件页切进某个目录后一片空白**
 
