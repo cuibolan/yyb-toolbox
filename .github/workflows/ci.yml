@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: 源码自检
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 语法 / 依赖 / 版本 / 预览图
+        run: python .github/scripts/ci_checks.py
+
+  build:
+    name: 打包单文件 exe
+    runs-on: windows-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 安装 PyInstaller
+        run: python -m pip install --disable-pip-version-check pyinstaller
+        shell: pwsh
+      - name: 构建 YYBToolbox.exe
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --noconsole `
+            --name YYBToolbox --icon app.ico --add-data "app.ico;." `
+            --version-file version_info.txt yyb_toolbox.py
+      - name: 校验产物
+        shell: pwsh
+        run: |
+          $exe = Get-Item dist/YYBToolbox.exe
+          "构建产物 {0}，{1:N0} 字节" -f $exe.Name, $exe.Length
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: YYBToolbox-exe
+          path: dist/YYBToolbox.exe
+          if-no-files-found: error
