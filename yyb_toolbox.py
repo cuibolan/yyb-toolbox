@@ -36,6 +36,7 @@ import time
 import traceback
 import urllib.error
 import urllib.request
+import webbrowser
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
@@ -67,6 +68,10 @@ MICROG_API = "https://api.github.com/repos/microg/GmsCore/releases/latest"
 GSF_API = "https://api.github.com/repos/microg/android_packages_apps_GsfProxy/releases/latest"
 FAKEGAPPS_API = "https://api.github.com/repos/whew-inc/FakeGApps/releases/latest"
 PLATFORM_TOOLS_URL = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
+
+APP_VERSION = "1.3.4.0"
+RELEASES_API = "https://api.github.com/repos/cuibolan/yyb-toolbox/releases/latest"
+RELEASES_PAGE = "https://github.com/cuibolan/yyb-toolbox/releases/latest"
 
 # 配色（深色）
 BG = "#0f1218"
@@ -341,6 +346,37 @@ class Adb:
         )
         return p.stdout or b""
 
+    def pull_file(self, remote: str, local: str | Path, root_mode: bool = False,
+                  timeout: int = 600) -> Path:
+        """把设备上的单个文件拉到本地。
+
+        普通 pull 失败时，若勾选了 Root 浏览，再用 `su -c cat` 兜底把二进制流写到本地；
+        最后校验本地文件确实存在且非空，否则抛出带 adb 输出的错误。
+        """
+        local = Path(local)
+        local.parent.mkdir(parents=True, exist_ok=True)
+        p = subprocess.run(
+            self._cmd(["pull", remote, str(local)]),
+            capture_output=True, creationflags=CREATE_NO_WINDOW, timeout=timeout,
+        )
+        out = ((p.stdout or b"") + (p.stderr or b"")).decode("utf-8", "replace").strip()
+        ok = p.returncode == 0 and local.exists() and local.stat().st_size > 0
+        if not ok and root_mode:
+            try:
+                data = self.exec_out(["shell", "su", "-c", f"cat {shlex.quote(remote)}"],
+                                     timeout=timeout)
+                if data:
+                    tmp = local.with_suffix(local.suffix + ".part")
+                    tmp.write_bytes(data)
+                    tmp.replace(local)
+                    ok = local.exists() and local.stat().st_size > 0
+                    out = "su cat 兜底拉取成功"
+            except Exception as e:  # noqa: BLE001
+                out = f"{out}\n{type(e).__name__}: {e}"
+        if not ok:
+            raise AdbError(f"拉取失败：{out or f'adb 返回码 {p.returncode}'}")
+        return local
+
     # -------------------------------------------------- 连接
     def devices(self) -> list[dict]:
         out = self.run(["devices", "-l"], timeout=20)
@@ -427,6 +463,17 @@ def parse_version(text: str) -> str:
         if "versionName=" in line:
             return line.split("versionName=", 1)[1].strip().split()[0]
     return ""
+
+
+def parse_app_version(text: str) -> tuple[int, ...]:
+    """把 v1.3.3.0 / 1.3.3 这类版本号解析成可比较的数字元组。"""
+    nums = re.findall(r"\d+", text or "")
+    return tuple(int(n) for n in nums[:4]) if nums else (0,)
+
+
+def sanitize_windows_name(name: str) -> str:
+    """去掉 Windows 文件名里不允许的字符。"""
+    return re.sub(r'[<>:"/\\|?*]', "_", (name or "").strip()) or "unnamed"
 
 
 def collect_info(adb: Adb, emit=None) -> dict:
@@ -582,6 +629,7 @@ class ToolboxApp:
         else:
             self.set_status("未找到 adb，可自动下载安装")
             self.root.after(500, self._offer_adb_install)
+        self.root.after(2500, lambda: self.check_update(silent=True))
 
     def _offer_adb_install(self):
         if self.adb.ready():
@@ -688,6 +736,7 @@ class ToolboxApp:
         top.pack_propagate(False)
         tk.Label(top, text="安卓引擎工具箱", bg=PANEL, fg=TEXT, font=FONT_TITLE).pack(side="left", padx=(18, 8), pady=14)
         tk.Label(top, text="YYB TOOLBOX", bg=PANEL, fg=MUTED, font=("Consolas", 9)).pack(side="left", pady=(18, 0), anchor="n")
+        tk.Label(top, text=f"v{APP_VERSION}", bg=PANEL, fg=MUTED, font=FONT_SM).pack(side="left", padx=(10, 0), pady=(18, 0), anchor="n")
 
         right = tk.Frame(top, bg=PANEL)
         right.pack(side="right", padx=16, pady=12)
@@ -2822,19 +2871,52 @@ class ToolboxApp:
         self.bg(work, done)
 
     def pull_file(self):
-        remote = self.selected_remote_path()
-        if not remote:
+        sel = self.file_tree.selection()
+        if not sel:
+            messagebox.showinfo("提示", "请先选择一个文件或文件夹", parent=self.root)
             return
+        name, typ = self.file_tree.item(sel[0], "values")[:2]
+        remote = self._join_remote(name)
+        root_mode = self.file_root_mode.get()
+
+        # 文件夹：整目录下载到所选目录
+        if typ.startswith("目录"):
+            if not messagebox.askyesno("下载文件夹", f"将整个文件夹下载到本地：\n{remote}\n\n继续？",
+                                       parent=self.root):
+                return
+            folder = filedialog.askdirectory(title="保存到", initialdir=str(APP_DIR))
+            if not folder:
+                return
+            local = Path(folder) / sanitize_windows_name(name)
+
+            def work(emit):
+                self.adb.run(["pull", remote, str(local)], timeout=600)
+                if not local.exists():
+                    raise AdbError("目录拉取后本地未生成文件")
+                return local
+
+            def done(path, err):
+                self.set_status(f"已下载文件夹：{path}" if not err else f"下载失败：{err}")
+                if err:
+                    messagebox.showerror("下载失败", str(err), parent=self.root)
+            self.bg(work, done)
+            return
+
         local = filedialog.asksaveasfilename(title="保存到", initialdir=str(APP_DIR),
-                                             initialfile=Path(remote).name)
+                                             initialfile=sanitize_windows_name(Path(remote).name))
         if not local:
             return
 
         def work(emit):
-            return self.adb.run(["pull", remote, local], timeout=600)
+            return self.adb.pull_file(remote, local, root_mode=root_mode, timeout=600)
 
-        def done(out, err):
-            self.set_status(f"已下载：{local}" if not err else f"下载失败：{err}")
+        def done(path, err):
+            if err:
+                self.set_status(f"下载失败：{err}")
+                messagebox.showerror("下载失败", str(err), parent=self.root)
+                return
+            self.set_status(f"已下载：{path}")
+            messagebox.showinfo("下载完成", f"已保存到：\n{path}", parent=self.root)
         self.bg(work, done)
 
     def mkdir_device(self):
@@ -3123,6 +3205,7 @@ class ToolboxApp:
         self.button(head, "重新连接", self.connect).pack(side="right", padx=8)
         self.button(head, "重启 adb server", self.restart_adb).pack(side="right")
         self.button(head, "自动安装 adb", lambda: self.install_adb()).pack(side="right", padx=8)
+        self.button(head, "检查更新", lambda: self.check_update(False)).pack(side="right")
 
         self.diag_text = scrolledtext.ScrolledText(page, bg="#0c1015", fg="#c3cbd8", relief="flat",
                                                    font=("Consolas", 9), wrap="word")
@@ -3213,6 +3296,50 @@ class ToolboxApp:
         except Exception as e:
             out = str(e)
         messagebox.showinfo("adb 版本", out, parent=self.root)
+
+    def check_update(self, silent: bool = False):
+        """查询 GitHub Releases 最新版；silent=True 时启动后台静默检查，不弹「已是最新」。"""
+        self.set_status("正在检查更新…")
+
+        def work(emit):
+            req = urllib.request.Request(
+                RELEASES_API,
+                headers={"User-Agent": f"YYB-Toolbox/{APP_VERSION}",
+                         "Accept": "application/vnd.github+json"})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                return json.loads(r.read().decode("utf-8"))
+
+        def done(rel, err):
+            if err:
+                if silent:
+                    self.set_status("检查更新跳过：网络不可达")
+                else:
+                    self.set_status("检查更新失败：网络不可达")
+                    messagebox.showwarning("检查更新失败",
+                                           f"无法连接 GitHub：\n{err}\n\n可稍后在「诊断与维护」里手动重试。",
+                                           parent=self.root)
+                return
+            tag = (rel.get("tag_name") or "").lstrip("vV").strip()
+            latest = parse_app_version(tag)
+            current = parse_app_version(APP_VERSION)
+            if latest <= current:
+                self.set_status(f"已是最新版 v{APP_VERSION}")
+                if not silent:
+                    messagebox.showinfo("检查更新", f"当前已是最新版（v{APP_VERSION}）。", parent=self.root)
+                return
+            body = (rel.get("body") or "").strip()
+            if len(body) > 600:
+                body = body[:600] + "…"
+            url = rel.get("html_url") or RELEASES_PAGE
+            msg = f"发现新版本 v{tag}（当前 v{APP_VERSION}）\n\n"
+            if body:
+                msg += body + "\n\n"
+            msg += "是否打开发布页下载新版？"
+            self.set_status(f"有新版本：v{tag}")
+            if messagebox.askyesno("发现新版本", msg, parent=self.root):
+                webbrowser.open(url)
+
+        self.bg(work, done)
 
     def check_port(self):
         p = subprocess.run("netstat -ano | findstr :5555", shell=True, capture_output=True, text=True,
