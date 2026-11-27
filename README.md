@@ -75,6 +75,11 @@ microG 用来替代 Google 服务框架。完整生效需要两件事：
    - 然后打开 **LSPosed**，在「模块」里启用 **FakeGApps**，作用域勾选「系统框架」；
    - 重启引擎后生效。打开 microG 设置 → 自检（Self-Check）可确认各项是否正常。
 
+> **microG 只提供谷歌服务框架，不带应用商店**：它替代的是 GMS（登录、推送等底层服务），
+> 本身没有 Play 商店界面，也不能直接搜索或下载应用。想在引擎里装应用，请自行安装第三方开源商店，
+> 比如 [Aurora Store](https://auroraoss.com/downloads/)（可匿名访问 Google Play 的开源客户端）、
+> [F-Droid](https://f-droid.org/)；也可以直接用本工具的「应用管理 → 安装 APK」装本地 apk 包。
+
 > 若引擎里装的是官方 Google 服务（版本号不是 `0.3.x`），签名与 microG 冲突，
 > 工具箱会先把原 GMS 备份为 `cache/backup_gms.apk` 再卸载。也可以取消该选项，手动处理。
 
