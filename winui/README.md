@@ -1,8 +1,8 @@
-# 安卓引擎工具箱 · WinUI 3（全 C# 重写，本地版）
+# 安卓引擎工具箱 · WinUI 3（全 C# 重写版）
 
-这是原「安卓引擎工具箱（YYB Toolbox）」的 **C# / WinUI 3 全量重写版本**，仅在本机使用，
-**不初始化 git、不关联 GitHub 远程仓库、不推送**。原 Python 工具箱的源码、打包脚本和已发布
-exe 全部保留在 `..\应用宝工具箱\`，本目录不改动、不覆盖。
+这是原「安卓引擎工具箱（YYB Toolbox）」的 **C# / WinUI 3 全量重写版本**，源码位于仓库
+`win-ui` 分支的 `winui/` 子目录下；原 Python 实现保留在 `main` 分支及本地 `..\应用宝工具箱\`
+目录，互不覆盖。
 
 ## 技术栈
 
@@ -122,5 +122,5 @@ MicroG **只提供谷歌服务框架**（GmsCore / GsfProxy / FakeGApps 等）�
 | --- | --- | --- |
 | 位置 | `..\应用宝工具箱\` | `应用宝工具箱-WinUI\` |
 | 技术 | Python 标准库 + tkinter + adb | C# / WinUI 3 + adb |
-| 仓库 | 已发布到 GitHub `cuibolan/yyb-toolbox` | **本地目录，未初始化 git、不推送** |
+| 仓库 | 已发布到 GitHub `cuibolan/yyb-toolbox` | 位于 `win-ui` 分支 `winui/` 子目录 |
 | 构建 | PyInstaller 打包 exe | `dotnet publish` 自包含发布 |
