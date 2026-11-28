@@ -341,10 +341,33 @@ public class AdbClient
 
     public void StartPackage(string pkg, string? activity = null)
     {
-        if (string.IsNullOrEmpty(activity))
-            Run(new[] { "shell", "monkey", "-p", pkg, "-c", "android.intent.category.LAUNCHER", "1" }, timeout: 30);
-        else
-            Run(new[] { "shell", "am", "start", "-n", activity }, timeout: 30);
+        var comp = string.IsNullOrEmpty(activity) ? "" : $"{pkg}/{activity}";
+        if (comp == "")
+        {
+            var resolve = Shell($"cmd package resolve-activity --brief {ShellQuote(pkg)}", timeout: 30);
+            foreach (var line in resolve.Split('\n'))
+            {
+                var l = line.Trim();
+                if (l.Contains('/') && !l.Contains("No activity")) { comp = l; break; }
+            }
+        }
+
+        var attempts = new List<string>();
+        if (!string.IsNullOrEmpty(comp)) attempts.Add($"am start -n {comp}");
+        attempts.Add($"monkey -p {ShellQuote(pkg)} -c android.intent.category.LAUNCHER 1");
+
+        var last = "";
+        foreach (var cmd in attempts)
+        {
+            var res = Shell(cmd, timeout: 40);
+            last = res;
+            if (res.Contains("Error") || res.Contains("Exception") || res.Contains("No activities found"))
+                continue;
+            return;
+        }
+        var tail = last.Trim();
+        if (tail.Length > 300) tail = tail[..300];
+        throw new AdbError($"应用没有在引擎里显示出来。常见原因：启动即闪退或窗口被挡住。命令输出：{tail}");
     }
 
     public void ForceStop(string pkg) => Run(new[] { "shell", "am", "force-stop", pkg }, timeout: 30);
@@ -373,9 +396,11 @@ public class AdbClient
     }
 
     public Process StartLogcat(string? filterTag, string? level)
-    {        var args = new List<string> { "logcat" };
+    {
+        var args = new List<string> { "logcat" };
         if (!string.IsNullOrEmpty(level)) args.Add(level + ":*");
-        args.Add("-v"); args.Add("threadtime");
+        if (!string.IsNullOrWhiteSpace(filterTag)) args.AddRange(new[] { "-s", $"{filterTag}:V" });
+        args.Add("-v"); args.Add("time");
         var cmd = BuildCommand(args);
         var psi = new ProcessStartInfo
         {
@@ -386,8 +411,13 @@ public class AdbClient
             RedirectStandardError = true,
             CreateNoWindow = true,
             StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
         };
-        return Process.Start(psi)!;
+        var p = Process.Start(psi)!;
+        // 丢弃 stderr，避免错误输出填满管道导致进程堵死
+        p.ErrorDataReceived += (_, e) => { };
+        p.BeginErrorReadLine();
+        return p;
     }
 
     // ------------------------------------------------------------ 文件浏览

@@ -1,3 +1,4 @@
+using System.IO;
 using YYBToolbox.WinUI.Models;
 
 namespace YYBToolbox.WinUI.Services;
@@ -20,6 +21,16 @@ public class AppState
     }
 
     public void SetStatus(string text) => StatusChanged?.Invoke(text);
+
+    public static void Log(object? content)
+    {
+        try
+        {
+            var file = Path.Combine(AppContext.BaseDirectory, "startup.log");
+            File.AppendAllText(file, $"[{DateTime.Now:HH:mm:ss}] {content}\n");
+        }
+        catch { }
+    }
 
     public void RefreshAdb()
     {
