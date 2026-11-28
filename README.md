@@ -7,6 +7,8 @@
 
 > **非官方工具声明**：本项目是第三方开源工具，与腾讯公司及其关联方无任何关系，未获其授权或认可。文中出现的「应用宝」「Androws」仅用于说明本工具所调试的对象，相关商标归其权利人所有。请通过腾讯官网获取正版应用宝电脑版。
 
+> **另一版本（WinUI 3 重写）**：本仓库 `win-ui` 分支提供基于 C# / WinUI 3 的全量重写版本（当前 Alpha 预览），源码与安装包说明见 [winui/ 目录](https://github.com/cuibolan/yyb-toolbox/tree/win-ui/winui)；本 `main` 分支仍为下面的 Python / tkinter 原版。
+
 ![界面预览](docs/preview.jpg)
 
 ---
