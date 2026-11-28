@@ -1,0 +1,22 @@
+<UserControl
+    x:Class="YYBToolbox.WinUI.Pages.RootPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" MaxWidth="720">
+            <TextBlock Text="Root / Magisk 模块" FontSize="20" FontWeight="SemiBold" Foreground="#e6e9ef" />
+
+            <StackPanel Background="#171c24" CornerRadius="12" Padding="20" Spacing="10">
+                <TextBlock Foreground="#e6e9ef" TextWrapping="Wrap"
+                    Text="Magisk 模块列表、启停、删除、zip 内 manager.apk 提取安装以及刷入模块 zip 等流程正在从原工具箱移植，当前版本先提供基础 Root 状态检测。" />
+                <TextBlock Foreground="#98a2b3" TextWrapping="Wrap"
+                    Text="操作系统分区与模块有风险，请确认已备份重要数据后再进行高级操作。" />
+            </StackPanel>
+
+            <Button Click="OnCheckClicked" Content="检测 Root / Magisk 状态" />
+            <TextBox x:Name="ResultBox" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                     FontFamily="Consolas" Background="#11151c" Foreground="#e6e9ef" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

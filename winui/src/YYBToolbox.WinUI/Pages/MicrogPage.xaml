@@ -1,0 +1,22 @@
+<UserControl
+    x:Class="YYBToolbox.WinUI.Pages.MicrogPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16" MaxWidth="720">
+            <TextBlock Text="MicroG 环境" FontSize="20" FontWeight="SemiBold" Foreground="#e6e9ef" />
+
+            <StackPanel Background="#171c24" CornerRadius="12" Padding="20" Spacing="10">
+                <TextBlock Foreground="#e6e9ef" TextWrapping="Wrap"
+                    Text="MicroG 只提供谷歌服务框架（GmsCore / GsfProxy / FakeGApps 等），本身不提供应用商店。若要下载应用，请安装 Aurora Store 等第三方开源商店。" />
+                <TextBlock Foreground="#98a2b3" TextWrapping="Wrap"
+                    Text="一键安装 MicroG、签名冲突备份卸载、授权与电池白名单等流程正在从原工具箱移植，当前版本先提供说明与基础连接状态。" />
+            </StackPanel>
+
+            <Button Click="OnCheckClicked" Content="检查已安装的 MicroG 包" />
+            <TextBox x:Name="ResultBox" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                     FontFamily="Consolas" Background="#11151c" Foreground="#e6e9ef" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

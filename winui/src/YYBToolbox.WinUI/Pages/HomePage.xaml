@@ -1,0 +1,77 @@
+<UserControl
+    x:Class="YYBToolbox.WinUI.Pages.HomePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ScrollViewer>
+        <StackPanel Padding="24" Spacing="16">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock Text="设备信息" FontSize="20" FontWeight="SemiBold" Foreground="#e6e9ef" VerticalAlignment="Center" />
+                <Button Click="OnRefreshClicked" Content="刷新信息" />
+            </StackPanel>
+
+            <Grid Background="#171c24" CornerRadius="12" Padding="20" ColumnSpacing="24" RowSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition /> <RowDefinition /> <RowDefinition /> <RowDefinition /> <RowDefinition /> <RowDefinition />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+                    <TextBlock Text="型号 / 品牌" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="ModelLine" Foreground="#e6e9ef" />
+                </StackPanel>
+                <StackPanel Grid.Row="0" Grid.Column="1" Spacing="2">
+                    <TextBlock Text="Android / SDK" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="AndroidLine" Foreground="#e6e9ef" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="1" Grid.Column="0" Spacing="2">
+                    <TextBlock Text="架构 ABI" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="AbiLine" Foreground="#e6e9ef" />
+                </StackPanel>
+                <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
+                    <TextBlock Text="分辨率 / DPI" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="ResolutionLine" Foreground="#e6e9ef" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Grid.Column="0" Spacing="2">
+                    <TextBlock Text="存储" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="StorageLine" Foreground="#e6e9ef" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="1" Spacing="2">
+                    <TextBlock Text="内存" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="MemoryLine" Foreground="#e6e9ef" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="3" Grid.Column="0" Spacing="2">
+                    <TextBlock Text="电池" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="BatteryLine" Foreground="#e6e9ef" />
+                </StackPanel>
+                <StackPanel Grid.Row="3" Grid.Column="1" Spacing="2">
+                    <TextBlock Text="运行时间" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="UptimeLine" Foreground="#e6e9ef" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
+                    <TextBlock Text="SELinux" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="SelinuxLine" Foreground="#e6e9ef" />
+                </StackPanel>
+                <StackPanel Grid.Row="4" Grid.Column="1" Spacing="2">
+                    <TextBlock Text="Root / Magisk" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="RootLine" Foreground="#e6e9ef" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Spacing="2">
+                    <TextBlock Text="设备序列号" Foreground="#98a2b3" FontSize="12" />
+                    <TextBlock x:Name="SerialLine" Foreground="#e6e9ef" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock x:Name="HomeTip" Foreground="#98a2b3" TextWrapping="Wrap"
+                Text="未连接时请点顶部「连接引擎」。应用管理、文件、终端等页面需要引擎在线后才能读取数据。" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

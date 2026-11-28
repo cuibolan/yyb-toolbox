@@ -1,0 +1,31 @@
+<UserControl
+    x:Class="YYBToolbox.WinUI.Pages.LogcatPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Padding="24" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+            <ComboBox x:Name="LevelBox" SelectedIndex="1" MinWidth="90">
+                <ComboBoxItem Content="V (Verbose)" Tag="V" />
+                <ComboBoxItem Content="D (Debug)" Tag="D" />
+                <ComboBoxItem Content="I (Info)" Tag="I" />
+                <ComboBoxItem Content="W (Warn)" Tag="W" />
+                <ComboBoxItem Content="E (Error)" Tag="E" />
+            </ComboBox>
+            <TextBox x:Name="TagBox" MinWidth="180" PlaceholderText="按 Tag 过滤（可空）" />
+            <Button Click="OnStartClicked" Content="开始抓取" />
+            <Button Click="OnStopClicked" Content="停止" />
+            <Button Click="OnClearClicked" Content="清空" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1">
+            <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"
+                     FontFamily="Consolas" Background="#11151c" Foreground="#e6e9ef" />
+        </ScrollViewer>
+    </Grid>
+</UserControl>

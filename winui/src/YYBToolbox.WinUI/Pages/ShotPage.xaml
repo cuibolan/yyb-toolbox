@@ -1,0 +1,21 @@
+<UserControl
+    x:Class="YYBToolbox.WinUI.Pages.ShotPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Padding="24" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+            <Button Click="OnShotClicked" Content="截取当前屏幕" />
+            <Button Click="OnSaveClicked" Content="保存到本地" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1">
+            <Image x:Name="ShotImage" Stretch="Uniform" />
+        </ScrollViewer>
+    </Grid>
+</UserControl>

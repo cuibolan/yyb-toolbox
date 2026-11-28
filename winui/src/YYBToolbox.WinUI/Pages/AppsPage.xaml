@@ -1,0 +1,75 @@
+<UserControl
+    x:Class="YYBToolbox.WinUI.Pages.AppsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:YYBToolbox.WinUI.Models">
+
+    <Grid Padding="24" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+            <ComboBox x:Name="ScopeBox" SelectedIndex="0" MinWidth="110" SelectionChanged="OnScopeChanged">
+                <ComboBoxItem Content="第三方" />
+                <ComboBoxItem Content="系统" />
+                <ComboBoxItem Content="全部" />
+            </ComboBox>
+            <AutoSuggestBox x:Name="SearchBox" PlaceholderText="按包名过滤" MinWidth="240"
+                            TextChanged="OnFilterTextChanged" QuerySubmitted="OnFilterSubmitted" />
+            <Button Click="OnRefreshClicked" Content="刷新列表" />
+            <Button Click="OnInstallClicked" Content="安装 APK" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+            <Button Click="OnLaunchClicked" Content="启动" />
+            <Button Click="OnStopClicked" Content="停止" />
+            <Button Click="OnClearClicked" Content="清除数据" />
+            <Button Click="OnToggleClicked" Content="禁用 / 启用" />
+            <Button Click="OnExportClicked" Content="导出 APK" />
+            <Button Click="OnUninstallClicked" Content="卸载" Foreground="#ef4444" />
+        </StackPanel>
+
+        <Grid Grid.Row="2" Background="#11151c" Padding="16,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="1.2*" />
+                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="包名" Foreground="#98a2b3" FontSize="12" />
+            <TextBlock Grid.Column="1" Text="versionCode" Foreground="#98a2b3" FontSize="12" />
+            <TextBlock Grid.Column="2" Text="类型" Foreground="#98a2b3" FontSize="12" />
+            <TextBlock Grid.Column="3" Text="状态" Foreground="#98a2b3" FontSize="12" />
+        </Grid>
+
+        <ListView x:Name="AppList" Grid.Row="3" SelectionMode="Single" SelectionChanged="OnSelectionChanged">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="16,6" />
+                    <Setter Property="MinHeight" Value="34" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="models:AppInfo">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="3*" />
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{x:Bind Package}" Foreground="#e6e9ef" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Grid.Column="1" Text="{x:Bind VersionCode}" Foreground="#98a2b3" />
+                        <TextBlock Grid.Column="2" Text="{x:Bind Type}" Foreground="#98a2b3" />
+                        <TextBlock Grid.Column="3" Text="{x:Bind State}" Foreground="#98a2b3" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</UserControl>
